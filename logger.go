@@ -18,6 +18,7 @@ var (
 	logInfo  = logrus.New()
 	logDebug = logrus.New()
 	logTrace = logrus.New()
+	logMerge = logrus.New()
 )
 
 var loggerMap = map[string]*logrus.Logger{
@@ -27,6 +28,16 @@ var loggerMap = map[string]*logrus.Logger{
 	"info":  logInfo,
 	"debug": logDebug,
 	"trace": logTrace,
+}
+
+func initMergedLog(logName, logPath string) {
+	logMerge.SetOutput(ioutil.Discard)
+	hk := newMergeHook(logName, logPath)
+	logMerge.AddHook(hk)
+	formatter := new(logrus.JSONFormatter)
+	formatter.TimestampFormat = "15:04:05"
+	formatter.DisableTimestamp = false
+	logMerge.SetFormatter(formatter)
 }
 
 func initCommonLog(logPath string) {
@@ -40,7 +51,7 @@ func initCommonLog(logPath string) {
 
 	// make new flshook for each logger
 	for l, lg := range loggerMap {
-		hk := newHook(l, logPath)
+		hk := newCommonHook(l, logPath)
 		lg.AddHook(hk)
 	}
 
@@ -55,23 +66,6 @@ func initCommonLog(logPath string) {
 	logDebug.SetFormatter(formatter)
 	logTrace.SetFormatter(formatter)
 }
-
-/******************************/
-// 非常规命名的日志文件
-/******************************/
-//func InitLogger(files []string, logPath string) {
-//	logMap := make(map[string]*logrus.Logger)
-//	for _, file := range files {
-//		NewLogger(logMap, file, logPath)
-//	}
-//}
-//
-//func NewLogger(m map[string]*logrus.Logger, level string, logPath string) {
-//	logger := logrus.New()
-//	hk := newHook(level, logPath)
-//	logger.AddHook(hk)
-//	m[level] = logger
-//}
 
 // initiate watcher of logs
 func initFileWatcher(logPath string) {
@@ -123,7 +117,7 @@ func updateFileHandle(filePath string) {
 	fileName = strings.Split(fileName, "_")[0]
 	logPath := path.Dir(filePath)
 	neoHooks := make(logrus.LevelHooks)
-	hk := newHook(fileName, logPath)
+	hk := newCommonHook(fileName, logPath)
 	neoHooks.Add(hk)
 	loggerMap[fileName].ReplaceHooks(neoHooks)
 }
@@ -137,4 +131,5 @@ func changeLevel(level int) {
 	logInfo.SetLevel(l)
 	logDebug.SetLevel(l)
 	logTrace.SetLevel(l)
+	logMerge.SetLevel(l)
 }

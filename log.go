@@ -9,11 +9,24 @@ import (
 
 var logLevel int
 
-// InitPac Initiate logger
-func InitPac(logPath string) {
+// NewLogger return new logger, if args giv
+//func NewLogger(logPath string, args ...string) {
+//
+//}
+
+// InitLogger Initiate logger
+func InitLogger(logPath string, args ...string) {
 	initFolder(logPath)
-	initCommonLog(logPath)
-	go initFileWatcher(logPath)
+	ChangeLevel(Info)
+	// select log mode: merged or discrete
+	if len(args) == 0 {
+		// discrete
+		initCommonLog(logPath)
+		go initFileWatcher(logPath)
+	} else {
+		// merged
+		initMergedLog(args[0], logPath)
+	}
 }
 
 // ChangeLevel change logs' level
@@ -57,6 +70,40 @@ func CTrace(msg string, args ...interface{}) {
 	}
 }
 
+func MError(msg string, args ...interface{}) {
+	if isAllowed(Error) {
+		mlog(msg, args...)
+	}
+}
+
+func MWarn(msg string, args ...interface{}) {
+	if isAllowed(Warn) {
+		mlog(msg, args...)
+
+	}
+}
+
+func MInfo(msg string, args ...interface{}) {
+	if isAllowed(Info) {
+		mlog(msg, args...)
+
+	}
+}
+
+func MDebug(msg string, args ...interface{}) {
+	if isAllowed(Debug) {
+		mlog(msg, args...)
+
+	}
+}
+
+func MTrace(msg string, args ...interface{}) {
+	if isAllowed(Trace) {
+		mlog(msg, args...)
+
+	}
+}
+
 func clog(level int, msg string, args ...interface{}) {
 	str := fmt.Sprintf(msg, args...)
 	switch level {
@@ -75,6 +122,10 @@ func clog(level int, msg string, args ...interface{}) {
 	}
 }
 
+func mlog(msg string, args ...interface{}) {
+	str := fmt.Sprintf(msg, args...)
+	logMerge.Log(logrus.WarnLevel, str)
+}
 func initFolder(logPath string) {
 	_ = os.MkdirAll(logPath, 0755)
 }
