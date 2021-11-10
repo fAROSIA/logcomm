@@ -1,7 +1,7 @@
 package logcomm
 
 const (
-	_ = iota
+	Panic = iota
 	Fatal
 	Error
 	Warn
